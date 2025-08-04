@@ -1,0 +1,28 @@
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: block-tmp-write
+spec:
+  selector:
+    matchLabels:
+      app: flask-app
+  file:
+    matchDirectories:
+      - dir: /tmp/
+        recursive: true
+  action: Block
+  severity: 5
+---
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: block-python-listener
+spec:
+  selector:
+    matchLabels:
+      app: flask-app
+  process:
+    matchPaths:
+    - path: /usr/local/bin/python3.9
+  action: Block
+  severity: 5

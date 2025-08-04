@@ -1,0 +1,20 @@
+FROM python:3.9-slim-buster
+
+# Create a non-root user and group
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy files and change ownership
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
+COPY . .
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Run the app
+CMD ["python3", "-m", "flask", "run", "--host=0.0.0.0"]
